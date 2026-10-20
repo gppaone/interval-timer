@@ -1,14 +1,23 @@
-version: '3.8'
-
 services:
   interval-timer:
-    build: .
     container_name: interval-timer
-    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - BASE_PATH=/interval-timer
     ports:
-      - "3000:3000"
+      - "3002:3000" # Change 3001 to whatever port is next in your sequence
+    networks:
+      - svelte_network
     volumes:
       - timer-data:/app/prisma
 
-volumes:
-  timer-data:
+networks:
+  svelte_network:
+    driver: bridge
