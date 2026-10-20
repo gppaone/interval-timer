@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  interval-timer:
+    build: .
+    container_name: interval-timer
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - timer-data:/app/prisma
+
+volumes:
+  timer-data:
