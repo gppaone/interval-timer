@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
+    import { resolve } from '$app/paths';
     import { playBeep } from '$lib/audio';
 
     export let data;
@@ -70,7 +71,7 @@
     }
 
     async function saveRoutine() {
-        await fetch('/api/routine', {
+        await fetch(resolve('/api/routine'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: routineName, intervals })

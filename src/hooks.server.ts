@@ -1,20 +1,20 @@
 import { redirect, type Handle } from '@sveltejs/kit';
+import { resolve as resolvePath } from '$app/paths';
 import { TIMER_PASSWORD } from '$app/env/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    const cookie = event.cookies.get('timer_auth');
-    const isLoginPage = event.url.pathname === '/login';
-    const isAuthApi = event.url.pathname === '/api/auth';
+  const cookie = event.cookies.get('timer_auth');
 
-    // Allow public access to login page and authentication endpoint
-    if (isLoginPage || isAuthApi) {
-        return resolve(event);
-    }
+  const isLoginPage = event.url.pathname.endsWith('/login');
+  const isAuthApi = event.url.pathname.endsWith('/api/auth');
 
-    // Redirect to /login if cookie doesn't match password hash/token
-    if (cookie !== TIMER_PASSWORD) {
-        throw redirect(303, '/login');
-    }
-
+  if (isLoginPage || isAuthApi) {
     return resolve(event);
+  }
+
+  if (cookie !== TIMER_PASSWORD) {
+    throw redirect(303, resolvePath('/login'));
+  }
+
+  return resolve(event);
 };
