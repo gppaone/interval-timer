@@ -8,7 +8,10 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     sveltekit({
-      adapter: adapter()
+      adapter: adapter(),
+      paths: {
+        base: '/interval-timer'
+      }
     })
   ],
   resolve: {
