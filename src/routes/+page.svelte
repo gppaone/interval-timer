@@ -96,13 +96,9 @@
 
     <!-- Main Timer Display -->
     <main class="my-auto flex w-full min-w-0 flex-col items-center justify-center py-6 sm:py-10">
-        <div class="mb-4 inline-block rounded-full px-4 py-1.5 text-xs font-black tracking-wider uppercase sm:mb-6"
-            class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
-            class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>
-            {currentInterval.type}
-        </div>
 
-        <h2 class="mb-4 max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8">{currentInterval.name}</h2>
+        <h2 class="mb-4 px-4 py-1.5 rounded-full max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8" class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
+            class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>{currentInterval.name}</h2>
 
         <div class="my-2 w-full max-w-full text-center font-mono text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),8rem)] font-black leading-none tracking-tighter whitespace-nowrap sm:my-4">
             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
