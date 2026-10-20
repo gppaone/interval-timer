@@ -18,6 +18,9 @@ services:
     volumes:
       - timer-data:/app/prisma
 
+volumes:
+  timer-data:
+
 networks:
   svelte_network:
     driver: bridge
