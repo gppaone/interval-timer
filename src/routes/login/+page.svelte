@@ -3,7 +3,7 @@
     import { resolve } from '$app/paths';
   </script>
   
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
+  <div class="flex min-h-dvh items-center justify-center bg-slate-950 p-4 text-slate-100">
     <form method="POST" action={resolve('/api/auth')} use:enhance class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-sm space-y-4">
       <h1 class="text-xl font-bold text-center">Private Access</h1>
       <div>

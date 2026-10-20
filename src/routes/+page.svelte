@@ -85,26 +85,26 @@
     });
 </script>
 
-<div class="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between p-6 max-w-md mx-auto">
+<div class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-between bg-slate-900 p-4 text-slate-100 sm:p-6">
     <!-- Header -->
-    <header class="flex justify-between items-center border-b border-slate-800 pb-4">
-        <h1 class="text-xl font-bold tracking-wide">{routineName}</h1>
-        <button on:click={() => { isEditing = true; pauseTimer(); }} class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold transition">
+    <header class="flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <h1 class="min-w-0 flex-1 truncate text-xl font-bold tracking-wide">{routineName}</h1>
+        <button on:click={() => { isEditing = true; pauseTimer(); }} class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700">
             Edit
         </button>
     </header>
 
     <!-- Main Timer Display -->
-    <main class="flex flex-col items-center justify-center my-auto py-10">
-        <div class="inline-block px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase mb-6"
+    <main class="my-auto flex w-full min-w-0 flex-col items-center justify-center py-6 sm:py-10">
+        <div class="mb-4 inline-block rounded-full px-4 py-1.5 text-xs font-black tracking-wider uppercase sm:mb-6"
             class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
             class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>
             {currentInterval.type}
         </div>
 
-        <h2 class="text-3xl font-extrabold mb-8 text-center">{currentInterval.name}</h2>
-    
-        <div class="text-9xl font-black font-mono tracking-tighter my-4">
+        <h2 class="mb-4 max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8">{currentInterval.name}</h2>
+
+        <div class="my-2 w-full max-w-full text-center font-mono text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),8rem)] font-black leading-none tracking-tighter whitespace-nowrap sm:my-4">
             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
         </div>
 
@@ -137,9 +137,9 @@
         
                 <div class="overflow-y-auto flex-1 space-y-3 pr-1">
                     {#each intervals as item, i}
-                    <div class="flex items-center gap-2 bg-slate-800/60 p-2.5 rounded-xl border border-slate-800">
-                        <input type="text" bind:value={item.name} class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm flex-1" />
-                        <input type="number" bind:value={item.duration} min="1" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm w-16 text-center" />
+                    <div class="flex min-w-0 items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/60 p-2.5">
+                        <input type="text" bind:value={item.name} class="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm" />
+                        <input type="number" bind:value={item.duration} min="1" class="w-16 shrink-0 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-center text-sm" />
                         <span class="text-xs text-slate-400">s</span>
                         <button on:click={() => removeInterval(i)} class="text-rose-400 hover:text-rose-300 p-1 font-bold">✕</button>
                     </div>
