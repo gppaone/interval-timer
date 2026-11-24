@@ -20,18 +20,28 @@ export const actions = {
 			return fail(429, { email, error: 'Too many failed attempts. Try again in a few minutes.' });
 		}
 
-		const user = await db.user.findUnique({ where: { email } });
-		// Verified even when the user does not exist, to keep timing uniform.
-		const valid = await verifyPassword(password, user?.passwordHash ?? null);
+		try {
+			const user = await db.user.findUnique({ where: { email } });
+			// Verified even when the user does not exist, to keep timing uniform.
+			const valid = await verifyPassword(password, user?.passwordHash ?? null);
 
-		if (!user || !valid) {
-			recordFailure(email);
-			return fail(400, { email, error: 'Invalid email or password.' });
+			if (!user || !valid) {
+				recordFailure(email);
+				return fail(400, { email, error: 'Invalid email or password.' });
+			}
+
+			clearFailures(email);
+			const { token, expiresAt } = await createSession(user.id);
+			setSessionCookie(cookies, token, expiresAt, url.protocol === 'https:');
+		} catch (err) {
+			// SvelteKit hides unexpected errors from the browser, so log the real
+			// cause here and show a useful message on the form instead of a 500 page.
+			console.error('Login failed unexpectedly:', err);
+			return fail(500, {
+				email,
+				error: 'Sign-in hit a server problem. Check the server log for details.'
+			});
 		}
-
-		clearFailures(email);
-		const { token, expiresAt } = await createSession(user.id);
-		setSessionCookie(cookies, token, expiresAt, url.protocol === 'https:');
 
 		throw redirect(303, resolve('/'));
 	}
