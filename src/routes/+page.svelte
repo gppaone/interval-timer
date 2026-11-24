@@ -92,6 +92,21 @@
         <button on:click={() => { isEditing = true; pauseTimer(); }} class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700">
             Edit
         </button>
+        <details class="relative shrink-0">
+            <summary class="cursor-pointer list-none rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700" aria-label="Account menu">
+                ⋯
+            </summary>
+            <div class="absolute right-0 z-40 mt-2 w-56 space-y-1 rounded-xl border border-slate-800 bg-slate-900 p-2 text-sm shadow-xl">
+                <div class="truncate px-2 py-1 text-xs text-slate-500">{data.user.email}</div>
+                {#if data.user.isAdmin}
+                    <a href={resolve('/admin')} class="block rounded-lg px-2 py-1.5 hover:bg-slate-800">Manage users</a>
+                {/if}
+                <a href={resolve('/account')} class="block rounded-lg px-2 py-1.5 hover:bg-slate-800">Change password</a>
+                <form method="POST" action={resolve('/logout')}>
+                    <button class="w-full rounded-lg px-2 py-1.5 text-left hover:bg-slate-800">Sign out</button>
+                </form>
+            </div>
+        </details>
     </header>
 
     <!-- Main Timer Display -->

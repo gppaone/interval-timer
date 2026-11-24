@@ -1,20 +1,40 @@
-import { redirect, type Handle } from '@sveltejs/kit';
+import { error, json, redirect, type Handle } from '@sveltejs/kit';
 import { resolve as resolvePath } from '$app/paths';
-import { TIMER_PASSWORD } from '$app/env/private';
+import {
+	SESSION_COOKIE,
+	deleteSessionCookie,
+	setSessionCookie,
+	validateSession
+} from '$lib/server/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
-  const cookie = event.cookies.get('timer_auth');
+	event.locals.user = null;
 
-  const isLoginPage = event.url.pathname.endsWith('/login');
-  const isAuthApi = event.url.pathname.endsWith('/api/auth');
+	const token = event.cookies.get(SESSION_COOKIE);
+	if (token) {
+		const session = await validateSession(token);
+		if (session) {
+			event.locals.user = session.user;
+			if (session.refreshed) {
+				setSessionCookie(event.cookies, token, session.expiresAt, event.url.protocol === 'https:');
+			}
+		} else {
+			deleteSessionCookie(event.cookies);
+		}
+	}
 
-  if (isLoginPage || isAuthApi) {
-    return resolve(event);
-  }
+	const routeId = event.route.id;
+	const isLoginPage = routeId === '/login';
+	const user = event.locals.user;
 
-  if (cookie !== TIMER_PASSWORD) {
-    throw redirect(303, resolvePath('/login'));
-  }
+	if (!user) {
+		if (isLoginPage) return resolve(event);
+		if (routeId?.startsWith('/api/')) return json({ error: 'Unauthorized' }, { status: 401 });
+		throw redirect(303, resolvePath('/login'));
+	}
 
-  return resolve(event);
+	if (isLoginPage) throw redirect(303, resolvePath('/'));
+	if (routeId?.startsWith('/admin') && !user.isAdmin) throw error(403, 'Forbidden');
+
+	return resolve(event);
 };

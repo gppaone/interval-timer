@@ -11,6 +11,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - BASE_PATH=/interval-timer
+      - DATABASE_URL=file:/app/prisma/dev.db
     ports:
       - "3002:3000" # Change 3001 to whatever port is next in your sequence
     networks:
