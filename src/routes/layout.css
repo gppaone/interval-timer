@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 
 @theme {
-	--font-timer: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+   --font-timer: "Share Tech Mono", ui-monospace, SFMono-Regular, monospace;
+   --font-timer--letter-spacing: -0.05em;
 }
 html {
 	overflow-x: clip;
