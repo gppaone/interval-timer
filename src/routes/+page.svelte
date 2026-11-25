@@ -8,8 +8,6 @@
 
     let intervals = [...data.routine.intervals];
     let routineName = data.routine.name;
-    // Edited in the dialog and copied onto the header only when Save succeeds.
-    let draftName = routineName;
 
     let currentIndex = 0;
     let timeLeft = intervals[0]?.duration || 0;
@@ -88,23 +86,12 @@
         intervals = intervals.filter((_, i) => i !== index);
     }
 
-    function openEditor() {
-        draftName = routineName;
-        isEditing = true;
-        pauseTimer();
-    }
-
     async function saveRoutine() {
-        const name = draftName.trim();
-        if (!name) return;
-        const response = await fetch(resolve('/api/routine'), {
+        await fetch(resolve('/api/routine'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, intervals })
+            body: JSON.stringify({ name: routineName, intervals })
         });
-        if (!response.ok) return;
-        routineName = name;
-        draftName = name;
         isEditing = false;
         resetTimer();
     }
@@ -118,7 +105,7 @@
     <!-- Header -->
     <header class="flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <h1 class="min-w-0 flex-1 truncate text-xl font-bold tracking-wide">{routineName}</h1>
-        <button on:click={openEditor} class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700">
+        <button on:click={() => { isEditing = true; pauseTimer(); }} class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700">
             Edit
         </button>
         <details class="relative shrink-0">
@@ -144,8 +131,8 @@
         <h2 class="mb-4 px-4 py-1.5 rounded-full max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8" class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
             class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>{currentInterval.name}</h2>
 
-        <div class="my-2 w-full max-w-full text-center -translate-x-[0.04em] tracking-[-0.04em] font-timer text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),9rem)] font-black leading-none whitespace-nowrap sm:my-4"
-            class:text-sky-400={getReady > 0}>
+        <div class="my-2 w-full max-w-full text-center font-timer tabular-nums text-[length:clamp(4rem,calc((100vw-3.5rem)/2.2),11rem)] font-extrabold leading-none tracking-tight whitespace-nowrap sm:my-4"
+    class:text-sky-400={getReady > 0}>
             {#if getReady > 0}
                 {getReady}
             {:else}
@@ -199,16 +186,6 @@
         <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] flex flex-col">
                 <h2 class="text-lg font-bold mb-4">Edit Routine</h2>
-
-                <label class="mb-4 block">
-                    <span class="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-slate-500">Name</span>
-                    <input
-                        type="text"
-                        bind:value={draftName}
-                        maxlength="100"
-                        class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-                    />
-                </label>
         
                 <div class="overflow-y-auto flex-1 space-y-3 pr-1">
                     {#each intervals as item, i}
@@ -228,7 +205,7 @@
         
                 <div class="flex gap-3 pt-2 border-t border-slate-800">
                     <button on:click={() => isEditing = false} class="flex-1 bg-slate-800 text-slate-300 py-2.5 rounded-xl font-semibold text-sm">Cancel</button>
-                    <button on:click={saveRoutine} disabled={!draftName.trim()} class="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+                    <button on:click={saveRoutine} class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-semibold text-sm">Save</button>
                 </div>
             </div>
         </div>
