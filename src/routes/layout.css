@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+@theme {
+	--font-timer: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+}
 html {
 	overflow-x: clip;
 }
