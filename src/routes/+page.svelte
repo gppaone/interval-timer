@@ -131,7 +131,7 @@
         <h2 class="mb-4 px-4 py-1.5 rounded-full max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8" class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
             class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>{currentInterval.name}</h2>
 
-        <div class="my-2 w-full max-w-full text-center font-timer tabular-nums text-[length:clamp(4rem,calc((100vw-3.5rem)/2.2),12rem)] font-extrabold leading-none tracking-tight whitespace-nowrap sm:my-4"
+        <div class="my-2 w-full max-w-full text-center font-timer tabular-nums text-[length:clamp(4rem,calc((100vw-3.5rem)/2.2),11rem)] font-extrabold leading-none tracking-tight whitespace-nowrap sm:my-4"
     class:text-sky-400={getReady > 0}>
             {#if getReady > 0}
                 {getReady}
@@ -172,7 +172,7 @@
             {#if nextInterval}
                 <span class="h-2.5 w-2.5 shrink-0 rounded-full" class:bg-emerald-500={nextInterval.type === 'work'} class:bg-amber-500={nextInterval.type === 'rest'}></span>
                 <span class="min-w-0 flex-1 truncate font-semibold">{nextInterval.name}</span>
-                <span class="shrink-0 font-mono text-sm text-slate-400">
+                <span class="shrink-0 font-timer tabular-nums text-sm text-slate-400">
                     {String(Math.floor(nextInterval.duration / 60)).padStart(2, '0')}:{String(nextInterval.duration % 60).padStart(2, '0')}
                 </span>
             {:else}
