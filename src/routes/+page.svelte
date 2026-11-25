@@ -144,8 +144,8 @@
         <h2 class="mb-4 px-4 py-1.5 rounded-full max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8" class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
             class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>{currentInterval.name}</h2>
 
-        <div class="my-2 w-full max-w-full text-center font-timer scale-y-120 tabular-nums tracking-[-0.05em] text-[length:clamp(4rem,calc((100vw-3.5rem)/2.2),9rem)] font-extrabold leading-none whitespace-nowrap sm:my-4"
-    class:text-sky-400={getReady > 0}>
+        <div class="my-2 w-full max-w-full text-center -translate-x-[0.04em] font-mono text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),9rem)] font-black leading-none tracking-tighter whitespace-nowrap sm:my-4"
+            class:text-sky-400={getReady > 0}>
             {#if getReady > 0}
                 {getReady}
             {:else}
