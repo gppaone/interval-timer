@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import type { LayoutProps } from './$types';
+    import '@fontsource/share-tech-mono/400.css';
 
 	let { children }: LayoutProps = $props();
 </script>
