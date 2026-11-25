@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			routine = await db.routine.create({
 				data: {
 					userId: user.id,
-					name: 'Custom Workout',
+					name: 'StartTimer',
 					intervals: JSON.stringify(defaultIntervals)
 				}
 			});
