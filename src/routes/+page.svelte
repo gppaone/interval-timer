@@ -2,6 +2,7 @@
     import { onDestroy } from 'svelte';
     import { resolve } from '$app/paths';
     import { playBeep } from '$lib/audio';
+    import { beginInterval, initialState, tick as nextTick, type Beep, type Step } from '$lib/timer';
 
     export let data;
 
@@ -10,36 +11,48 @@
 
     let currentIndex = 0;
     let timeLeft = intervals[0]?.duration || 0;
+    // Seconds left in the "get ready" countdown before an exercise (0 = none).
+    let getReady = 0;
+    // False until Start is pressed, and again after Reset or finishing, so the
+    // first exercise gets its countdown too.
+    let hasStarted = false;
     let isRunning = false;
     let timerId: ReturnType<typeof setInterval> | null = null;
     let isEditing = false;
 
     $: currentInterval = intervals[currentIndex] || { name: 'Done', duration: 0, type: 'rest' };
+    $: nextInterval = intervals[currentIndex + 1] ?? null;
 
-    function tick() {
-        if (timeLeft <= 1) {
-            // Transition to next interval
-            playBeep(1046.5, 0.4, 'triangle'); // High C double beep on transition
-            if (currentIndex < intervals.length - 1) {
-                currentIndex += 1;
-                timeLeft = intervals[currentIndex].duration;
-            } else {
-                pauseTimer();
-                currentIndex = 0;
-                timeLeft = intervals[0]?.duration || 0;
-            }
-        } else {
-            timeLeft -= 1;
-            // Trigger sound when 3, 2, or 1 second remain
-            if (timeLeft <= 3 && timeLeft > 0) {
-                playBeep(659.25, 0.15, 'sine'); // E5 warning beep
-            }
+    function sound(beep: Beep) {
+        if (beep === 'countdown') playBeep(880, 0.15, 'sine'); // A5, once per get-ready second
+        else if (beep === 'go') playBeep(1318.5, 0.4, 'triangle'); // E6, exercise begins
+        else if (beep === 'warning') playBeep(659.25, 0.15, 'sine'); // E5, last 3 seconds
+        else if (beep === 'transition') playBeep(1046.5, 0.4, 'triangle'); // High C, interval changes
+    }
+
+    function apply(step: Step) {
+        currentIndex = step.state.index;
+        timeLeft = step.state.timeLeft;
+        getReady = step.state.getReady;
+        sound(step.beep);
+        if (step.finished) {
+            pauseTimer();
+            hasStarted = false;
         }
     }
 
+    function tick() {
+        apply(nextTick(intervals, { index: currentIndex, timeLeft, getReady }));
+    }
+
     function startTimer() {
-        if (isRunning) return;
+        if (isRunning || intervals.length === 0) return;
         isRunning = true;
+        if (!hasStarted) {
+            // Fresh start: begin the first interval (with its countdown if it is an exercise).
+            hasStarted = true;
+            apply(beginInterval(intervals, 0));
+        }
         timerId = setInterval(tick, 1000);
     }
 
@@ -50,8 +63,11 @@
 
     function resetTimer() {
         pauseTimer();
-        currentIndex = 0;
-        timeLeft = intervals[0]?.duration || 0;
+        hasStarted = false;
+        const state = initialState(intervals);
+        currentIndex = state.index;
+        timeLeft = state.timeLeft;
+        getReady = 0;
     }
 
     function addInterval(type: 'work' | 'rest') {
@@ -115,29 +131,54 @@
         <h2 class="mb-4 px-4 py-1.5 rounded-full max-w-full text-center text-3xl font-extrabold wrap-break-word sm:mb-8" class:bg-emerald-500={currentInterval.type === 'work'} class:text-emerald-950={currentInterval.type === 'work'}
             class:bg-amber-500={currentInterval.type === 'rest'} class:text-amber-950={currentInterval.type === 'rest'}>{currentInterval.name}</h2>
 
-        <div class="my-2 w-full max-w-full text-center font-mono text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),8rem)] font-black leading-none tracking-tighter whitespace-nowrap sm:my-4">
-            {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+        <div class="my-2 w-full max-w-full text-center font-mono text-[length:clamp(3.25rem,calc((100vw-3.5rem)/3),8rem)] font-black leading-none tracking-tighter whitespace-nowrap sm:my-4"
+            class:text-sky-400={getReady > 0}>
+            {#if getReady > 0}
+                {getReady}
+            {:else}
+                {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+            {/if}
         </div>
 
-        <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-2">
-            Interval {currentIndex + 1} of {intervals.length}
+        <div class="text-xs font-semibold uppercase tracking-widest mt-2" class:text-slate-500={getReady === 0} class:text-sky-400={getReady > 0}>
+            {#if getReady > 0}
+                Get ready
+            {:else}
+                Interval {currentIndex + 1} of {intervals.length}
+            {/if}
         </div>
     </main>
 
     <!-- Control Buttons -->
-    <footer class="flex gap-4">
-        {#if !isRunning}
-            <button on:click={startTimer} class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg transition">
-            Start
+    <footer class="space-y-4">
+        <div class="flex gap-4">
+            {#if !isRunning}
+                <button on:click={startTimer} class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg transition">
+                Start
+                </button>
+            {:else}
+                <button on:click={pauseTimer} class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg transition">
+                Pause
+                </button>
+            {/if}
+            <button on:click={resetTimer} class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-4 rounded-2xl transition">
+                Reset
             </button>
-        {:else}
-            <button on:click={pauseTimer} class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg transition">
-            Pause
-            </button>
-        {/if}
-        <button on:click={resetTimer} class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-4 rounded-2xl transition">
-            Reset
-        </button>
+        </div>
+
+        <!-- Up next -->
+        <div class="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-800 bg-slate-800/50 px-4 py-3" aria-live="polite">
+            <span class="shrink-0 text-xs font-semibold uppercase tracking-widest text-slate-500">Up next</span>
+            {#if nextInterval}
+                <span class="h-2.5 w-2.5 shrink-0 rounded-full" class:bg-emerald-500={nextInterval.type === 'work'} class:bg-amber-500={nextInterval.type === 'rest'}></span>
+                <span class="min-w-0 flex-1 truncate font-semibold">{nextInterval.name}</span>
+                <span class="shrink-0 font-mono text-sm text-slate-400">
+                    {String(Math.floor(nextInterval.duration / 60)).padStart(2, '0')}:{String(nextInterval.duration % 60).padStart(2, '0')}
+                </span>
+            {:else}
+                <span class="min-w-0 flex-1 truncate font-semibold text-slate-400">Last interval, then done</span>
+            {/if}
+        </div>
     </footer>
 
     <!-- Edit Routine Modal -->
