@@ -2,6 +2,7 @@
     import { onDestroy } from 'svelte';
     import { resolve } from '$app/paths';
     import { playBeep } from '$lib/audio';
+    import { MAX_WORKOUTS } from '$lib/workouts';
     import {
         DEFAULT_ROUND_REST,
         MAX_ROUNDS,
@@ -19,6 +20,12 @@
     } from '$lib/timer';
 
     export let data;
+
+    // Which workout this page is showing. Switching workouts reloads the page, so
+    // this never changes while the page is open.
+    const routineId: number = data.routine.id;
+    let workouts: { id: number; name: string }[] = data.workouts;
+    let pickerError = '';
 
     let intervals = [...data.routine.intervals];
     let routineName = data.routine.name;
@@ -152,6 +159,52 @@
         intervals = intervals.filter((_, i) => i !== index);
     }
 
+    function openWorkout(id?: number) {
+        // A full page load gives every workout a clean timer.
+        window.location.assign(id === undefined ? resolve('/') : `${resolve('/')}?w=${id}`);
+    }
+
+    async function onPick(event: Event) {
+        const select = event.currentTarget as HTMLSelectElement;
+        const value = select.value;
+        if (value === String(routineId)) return;
+
+        pickerError = '';
+        if (hasStarted && !confirm('Switch workouts? Your progress in this workout will be lost.')) {
+            select.value = String(routineId);
+            return;
+        }
+        pauseTimer();
+
+        if (value !== 'new') {
+            openWorkout(Number(value));
+            return;
+        }
+        try {
+            const response = await fetch(resolve('/api/routine/new'), { method: 'POST' });
+            if (!response.ok) throw new Error(String(response.status));
+            const created = await response.json();
+            openWorkout(created.id);
+        } catch {
+            select.value = String(routineId);
+            pickerError = "Couldn't create a new workout. Please try again.";
+        }
+    }
+
+    async function deleteWorkout() {
+        if (!confirm(`Delete "${routineName}"? This can't be undone.`)) return;
+        saveError = '';
+        try {
+            const response = await fetch(`${resolve('/api/routine')}/${routineId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error(String(response.status));
+        } catch {
+            saveError = "Couldn't delete this workout. Please try again.";
+            return;
+        }
+        // Back to the start; the server picks one of the remaining workouts.
+        openWorkout();
+    }
+
     function openEditor() {
         draftName = routineName;
         draftRounds = rounds;
@@ -180,7 +233,7 @@
             const response = await fetch(resolve('/api/routine'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, intervals, rounds: newRounds, roundRest: newRoundRest })
+                body: JSON.stringify({ id: routineId, name, intervals, rounds: newRounds, roundRest: newRoundRest })
             });
             if (!response.ok) throw new Error(String(response.status));
         } catch {
@@ -189,6 +242,7 @@
         }
         routineName = name;
         draftName = name;
+        workouts = workouts.map((w) => (w.id === routineId ? { ...w, name } : w));
         rounds = newRounds;
         roundRest = newRoundRest;
         isEditing = false;
@@ -203,7 +257,22 @@
 <div class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-between bg-slate-900 p-4 text-slate-100 sm:p-6">
     <!-- Header -->
     <header class="flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <h1 class="min-w-0 flex-1 truncate text-xl font-bold tracking-wide">{routineName}</h1>
+        <div class="relative min-w-0 flex-1">
+            <select
+                aria-label="Workout"
+                value={routineId}
+                on:change={onPick}
+                class="w-full min-w-0 cursor-pointer appearance-none truncate bg-transparent py-1 pr-6 text-xl font-bold tracking-wide [color-scheme:dark] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            >
+                {#each workouts as w (w.id)}
+                    <option value={w.id} class="bg-slate-900 text-slate-100">{w.id === routineId ? routineName : w.name}</option>
+                {/each}
+                {#if workouts.length < MAX_WORKOUTS}
+                    <option value="new" class="bg-slate-900 text-slate-100">＋ New workout</option>
+                {/if}
+            </select>
+            <span class="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 text-slate-500" aria-hidden="true">▾</span>
+        </div>
         <button on:click={openEditor} class="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700">
             Edit
         </button>
@@ -223,6 +292,10 @@
             </div>
         </details>
     </header>
+
+    {#if pickerError}
+        <p class="mt-3 rounded-lg border border-rose-900 bg-rose-950/50 px-3 py-2 text-sm text-rose-300">{pickerError}</p>
+    {/if}
 
     <!-- Main Timer Display -->
     <main class="my-auto flex w-full min-w-0 flex-col items-center justify-center py-6 sm:py-10">
@@ -389,6 +462,12 @@
                             </p>
                         {/if}
                     </div>
+
+                    {#if workouts.length > 1}
+                        <button on:click={deleteWorkout} class="w-full rounded-xl border border-rose-900 py-2 text-sm font-semibold text-rose-400 transition hover:bg-rose-950/50">
+                            Delete this workout
+                        </button>
+                    {/if}
                 </div>
 
                 {#if saveError}
