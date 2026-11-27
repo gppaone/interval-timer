@@ -35,7 +35,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		user: { email: user.email, isAdmin: user.isAdmin },
 		routine: {
 			name: routine.name,
-			intervals: JSON.parse(routine.intervals)
+			intervals: JSON.parse(routine.intervals),
+			rounds: routine.rounds,
+			roundRest: routine.roundRest
 		}
 	};
 };
