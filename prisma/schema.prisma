@@ -14,7 +14,10 @@ model User {
   isAdmin      Boolean   @default(false)
   createdAt    DateTime  @default(now())
   sessions     Session[]
-  routine      Routine?
+  routines     Routine[]
+  // The workout shown when the user opens the app. Not a foreign key: it is
+  // checked against the user's own routines every time it is read.
+  lastRoutineId Int?
 }
 
 // `id` is the SHA-256 hash of the token stored in the browser cookie, so a
@@ -28,12 +31,12 @@ model Session {
   @@index([userId])
 }
 
-// One routine per user. `userId` is nullable only so the routine that existed
-// before accounts were added can wait, unowned, until an admin assigns it to a
-// user when creating that user's account.
+// A workout. Each user can have several. `userId` is nullable only so the
+// routine that existed before accounts were added can wait, unowned, until an
+// admin assigns it to a user when creating that user's account.
 model Routine {
   id        Int      @id @default(autoincrement())
-  userId    Int?     @unique
+  userId    Int?
   name      String   @default("My Daily Routine")
   intervals String
   // The whole list of intervals is repeated `rounds` times, with `roundRest`
@@ -42,4 +45,6 @@ model Routine {
   roundRest Int      @default(60)
   updatedAt DateTime @updatedAt
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

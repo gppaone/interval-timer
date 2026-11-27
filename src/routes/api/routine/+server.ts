@@ -6,6 +6,7 @@ import type { RequestHandler } from './$types';
 type Interval = { id: string; name: string; duration: number; type: 'work' | 'rest' };
 
 type ParsedRoutine = {
+	id: number;
 	name: string;
 	intervals: Interval[];
 	// Left undefined when the client did not send them, so an older cached page
@@ -16,8 +17,9 @@ type ParsedRoutine = {
 
 function parseRoutine(body: unknown): ParsedRoutine | null {
 	if (!body || typeof body !== 'object') return null;
-	const { name, intervals, rounds, roundRest } = body as Record<string, unknown>;
+	const { id: routineId, name, intervals, rounds, roundRest } = body as Record<string, unknown>;
 
+	if (!Number.isInteger(routineId)) return null;
 	if (typeof name !== 'string' || name.length > 100) return null;
 	if (!Array.isArray(intervals) || intervals.length > 200) return null;
 
@@ -45,7 +47,7 @@ function parseRoutine(body: unknown): ParsedRoutine | null {
 		return null;
 	}
 
-	return { name, intervals: clean, rounds: rounds as number | undefined, roundRest: roundRest as number | undefined };
+	return { id: routineId as number, name, intervals: clean, rounds: rounds as number | undefined, roundRest: roundRest as number | undefined };
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -58,11 +60,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const intervals = JSON.stringify(parsed.intervals);
 	const { rounds, roundRest } = parsed;
-	await db.routine.upsert({
-		where: { userId: user.id },
-		update: { name: parsed.name, intervals, rounds, roundRest },
-		create: { userId: user.id, name: parsed.name, intervals, rounds, roundRest }
+	// Matching on userId as well means a user can only ever change their own workouts.
+	const { count } = await db.routine.updateMany({
+		where: { id: parsed.id, userId: user.id },
+		data: { name: parsed.name, intervals, rounds, roundRest }
 	});
+	if (count === 0) throw error(404, 'Workout not found');
 
 	return json({ success: true });
 };
