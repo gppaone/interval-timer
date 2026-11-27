@@ -36,6 +36,10 @@ model Routine {
   userId    Int?     @unique
   name      String   @default("My Daily Routine")
   intervals String
+  // The whole list of intervals is repeated `rounds` times, with `roundRest`
+  // seconds of rest between rounds (only used when rounds > 1).
+  rounds    Int      @default(1)
+  roundRest Int      @default(60)
   updatedAt DateTime @updatedAt
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

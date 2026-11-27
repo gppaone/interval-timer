@@ -1,12 +1,22 @@
 import { db } from '$lib/db';
 import { error, json } from '@sveltejs/kit';
+import { MAX_ROUNDS, MAX_ROUND_REST } from '$lib/timer';
 import type { RequestHandler } from './$types';
 
 type Interval = { id: string; name: string; duration: number; type: 'work' | 'rest' };
 
-function parseRoutine(body: unknown): { name: string; intervals: Interval[] } | null {
+type ParsedRoutine = {
+	name: string;
+	intervals: Interval[];
+	// Left undefined when the client did not send them, so an older cached page
+	// saving a routine cannot reset a user's rounds.
+	rounds?: number;
+	roundRest?: number;
+};
+
+function parseRoutine(body: unknown): ParsedRoutine | null {
 	if (!body || typeof body !== 'object') return null;
-	const { name, intervals } = body as Record<string, unknown>;
+	const { name, intervals, rounds, roundRest } = body as Record<string, unknown>;
 
 	if (typeof name !== 'string' || name.length > 100) return null;
 	if (!Array.isArray(intervals) || intervals.length > 200) return null;
@@ -24,7 +34,18 @@ function parseRoutine(body: unknown): { name: string; intervals: Interval[] } | 
 		clean.push({ id, name: itemName, duration: duration as number, type });
 	}
 
-	return { name, intervals: clean };
+	// Rounds must be a whole number of at least 1; the rest between rounds may be 0.
+	if (rounds !== undefined && (!Number.isInteger(rounds) || (rounds as number) < 1 || (rounds as number) > MAX_ROUNDS)) {
+		return null;
+	}
+	if (
+		roundRest !== undefined &&
+		(!Number.isInteger(roundRest) || (roundRest as number) < 0 || (roundRest as number) > MAX_ROUND_REST)
+	) {
+		return null;
+	}
+
+	return { name, intervals: clean, rounds: rounds as number | undefined, roundRest: roundRest as number | undefined };
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -36,10 +57,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!parsed) throw error(400, 'Invalid routine');
 
 	const intervals = JSON.stringify(parsed.intervals);
+	const { rounds, roundRest } = parsed;
 	await db.routine.upsert({
 		where: { userId: user.id },
-		update: { name: parsed.name, intervals },
-		create: { userId: user.id, name: parsed.name, intervals }
+		update: { name: parsed.name, intervals, rounds, roundRest },
+		create: { userId: user.id, name: parsed.name, intervals, rounds, roundRest }
 	});
 
 	return json({ success: true });
